@@ -3,6 +3,8 @@ import * as THREE from 'three'
 import * as Martini from '@mapbox/martini'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import { WireframeGeometry } from 'three';
+import { fetchImage } from './util';
+import { boxUnwrapUVs } from './geometry';
 // set up mesh generator for a certain 2^k+1 grid size
 const martini = new Martini.default(257);
 
@@ -83,21 +85,10 @@ async function start() {
 
 
         drawGrid(terrain, 1,1, ctx)
-        const errors = calcErrors(gridSize, tileSize, terrain)
         makeGeometry(gridSize, tileSize, terrain)
 
         initThree(response)
     }
-}
-
-function fetchImage(src: string):Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-      const image = new Image;
-      image.crossOrigin = "anonymous";
-      image.src = src;
-      image.onload = () => resolve(image);
-      image.onerror = reject;
-    });
 }
 
 const turbo = (x:any) => [
@@ -127,56 +118,6 @@ function drawGrid(data:any, cutoff = 1.0, max = 1.0, ctx:any) {
       }
     }
     ctx.putImageData(imgData, 256, 0);
-  }
-
-function  calcErrors(gridSize: number, tileSize: number, terrain: Float32Array) {
-    const errors = new Float32Array(gridSize * gridSize);
-
-    const numSmallestTriangles = tileSize * tileSize;
-    const numTriangles = numSmallestTriangles * 2 - 2; // 2 + 4 + 8 + ... 2^k = 2 * 2^k - 2
-    const lastLevelIndex = numTriangles - numSmallestTriangles;
-
-    // iterate over all possible triangles, starting from the smallest level
-    for (let i = numTriangles - 1; i >= 0; i--) {
-
-      // get triangle coordinates from its index in an implicit binary tree
-      let id = i + 2;
-      let ax = 0, ay = 0, bx = 0, by = 0, cx = 0, cy = 0;
-      if (id & 1) {
-        bx = by = cx = tileSize; // bottom-left triangle
-      } else {
-        ax = ay = cy = tileSize; // top-right triangle
-      }
-      while ((id >>= 1) > 1) {
-        const mx = (ax + bx) >> 1;
-        const my = (ay + by) >> 1;
-
-        if (id & 1) { // left half
-          bx = ax; by = ay;
-          ax = cx; ay = cy;
-        } else { // right half
-          ax = bx; ay = by;
-          bx = cx; by = cy;
-        }
-        cx = mx; cy = my;
-      }
-
-      // calculate error in the middle of the long edge of the triangle
-      const interpolatedHeight = (terrain[ay * gridSize + ax] + terrain[by * gridSize + bx]) / 2;
-      const middleIndex = ((ay + by) >> 1) * gridSize + ((ax + bx) >> 1);
-      const middleError = Math.abs(interpolatedHeight - terrain[middleIndex]);
-
-      if (i >= lastLevelIndex) { // smallest triangles
-        errors[middleIndex] = middleError;
-
-      } else { // bigger triangles; accumulate error with children
-        const leftChildError = errors[((ay + cy) >> 1) * gridSize + ((ax + cx) >> 1)];
-        const rightChildError = errors[((by + cy) >> 1) * gridSize + ((bx + cx) >> 1)];
-        errors[middleIndex] = Math.max(errors[middleIndex], middleError, leftChildError, rightChildError);
-      }
-    }
-
-    return errors;
   }
 
 function makeGeometry(gridSize: number, tileSize: number, terrain: Float32Array){
@@ -299,37 +240,4 @@ function initThree(martini: any){
     renderer.render( scene, camera );
 
   }
-}
-
-function boxUnwrapUVs(geometry) {
-  if (!geometry.boundingBox) geometry.computeBoundingBox();
-  var sz = geometry.boundingBox.getSize(new THREE.Vector3());
-  var center = geometry.boundingBox.getCenter(new THREE.Vector3())
-  var min = geometry.boundingBox.min;
-  if (geometry.faceVertexUvs[0].length == 0) {
-    for (var i = 0; i < geometry.faces.length; i++) {
-      geometry.faceVertexUvs[0].push([new THREE.Vector2(), new THREE.Vector2(), new THREE.Vector2()]);
-    }
-  }
-  for (var i = 0; i < geometry.faces.length; i++) {
-    var face = geometry.faces[i];
-    var faceUVs = geometry.faceVertexUvs[0][i]
-    var va = geometry.vertices[geometry.faces[i].a]
-    var vb = geometry.vertices[geometry.faces[i].b]
-    var vc = geometry.vertices[geometry.faces[i].c]
-    var vab = new THREE.Vector3().copy(vb).sub(va)
-    var vac = new THREE.Vector3().copy(vc).sub(va)
-    //now we have 2 vectors to get the cross product of...
-    var vcross = new THREE.Vector3().copy(vab).cross(vac);
-    //Find the largest axis of the plane normal...
-    vcross.set(Math.abs(vcross.x), Math.abs(vcross.y), Math.abs(vcross.z))
-    var majorAxis = vcross.x > vcross.y ? (vcross.x > vcross.z ? 'x' : vcross.y > vcross.z ? 'y' : vcross.y > vcross.z) : vcross.y > vcross.z ? 'y' : 'z'
-    //Take the other two axis from the largest axis
-    var uAxis = majorAxis == 'x' ? 'y' : majorAxis == 'y' ? 'x' : 'x';
-    var vAxis = majorAxis == 'x' ? 'z' : majorAxis == 'y' ? 'z' : 'y';
-    faceUVs[0].set((va[uAxis] - min[uAxis]) / sz[uAxis], (va[vAxis] - min[vAxis]) / sz[vAxis])
-    faceUVs[1].set((vb[uAxis] - min[uAxis]) / sz[uAxis], (vb[vAxis] - min[vAxis]) / sz[vAxis])
-    faceUVs[2].set((vc[uAxis] - min[uAxis]) / sz[uAxis], (vc[vAxis] - min[vAxis]) / sz[vAxis])
-  }
-  geometry.elementsNeedUpdate = geometry.verticesNeedUpdate = true;
 }
