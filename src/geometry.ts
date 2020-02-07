@@ -1,6 +1,6 @@
 import { Vector2, Vector3 } from "three";
 
-export function boxUnwrapUVs(geometry: any) {
+export function mapUVs(geometry: any) {
     if (!geometry.boundingBox) geometry.computeBoundingBox();
     const size = geometry.boundingBox.getSize(new Vector3());
     const min = geometry.boundingBox.min;
