@@ -1,85 +1,76 @@
 import * as style from './_scss/style'
 import * as THREE from 'three'
 import * as Martini from '@mapbox/martini'
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { WireframeGeometry } from 'three';
 import { fetchImage } from './util';
 import { mapUVs } from './geometry';
-import { generateTerrainGeometry, decodeTerrain } from './terrain';
+import { decodeTerrain } from './terrain';
+import { fetchTerrainTile } from './mapboxTiles';
 
 // set up mesh generator for a certain 2^k+1 grid size
 const martini = new Martini.default(257);
 
-const mapboxToken = 'pk.eyJ1IjoiamVyemFrbSIsImEiOiJjangxaHF4MGcwN3ZqNGJubzl2Zzdva3N5In0.DRchXs3ESLUuoH9Kh_N-ow'
-const location = '10/906/404'
-
-const martiniOptions = {
-  terrainExaggeration: 1.5,
-  metersPerPixel: 124.73948277849482
+export const mapboxToken = 'pk.eyJ1IjoiamVyemFrbSIsImEiOiJjangxaHF4MGcwN3ZqNGJubzl2Zzdva3N5In0.DRchXs3ESLUuoH9Kh_N-ow'
+const location = {
+  zoom: 10,
+  x: 906,
+  y: 404
 }
 
-const canvas = document.createElement('canvas')
-canvas.height = screen.height
-canvas.width = screen.width
+
 
 const threeCanvas = document.createElement('canvas')
 threeCanvas.height = 1080
 threeCanvas.width = 1920
 threeCanvas.style.position = 'fixed'
 threeCanvas.style.left = '0px'
-// threeCanvas.style.top = '256px'
-const renderer = new THREE.WebGLRenderer({canvas: threeCanvas, alpha: true});
+const renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, alpha: true });
 document.body.appendChild(threeCanvas)
-
-const ctx = canvas.getContext('2d')
 
 start()
 
 async function start() {
-    const imgUrl = `https://a.tiles.mapbox.com/v4/mapbox.terrain-rgb/${location}.png?access_token=${mapboxToken}`
+  const tileImg = await fetchTerrainTile(location.zoom, location.x, location.y)
+  const tileSize = tileImg.width
 
-    const tileImg = await fetchImage(imgUrl)
-    const tileSize = tileImg.width
-    const gridSize = tileSize+1
+  const textureCanvas = document.createElement('canvas')
+  textureCanvas.height = screen.height
+  textureCanvas.width = screen.width
+  const ctx = textureCanvas.getContext('2d')
 
-    if(ctx){
-        ctx.drawImage(tileImg, 0, 0);
-        const data = ctx.getImageData(0, 0, tileSize, tileSize).data;
-        const terrain = decodeTerrain(data, tileSize)
+  if (ctx) {
+    ctx.drawImage(tileImg, 0, 0);
+    const data = ctx.getImageData(0, 0, tileSize, tileSize).data;
+    const terrain = decodeTerrain(data, tileSize)
 
-        // generate RTIN hierarchy from terrain data (an array of size^2 length)
-        const tile = martini.createTile(terrain);
+    // generate RTIN hierarchy from terrain data (an array of size^2 length)
+    const tile = martini.createTile(terrain);
 
-        // get a mesh (vertices and triangles indices) for a 10m error
-        const meshMartini = tile.getMesh(10);
+    // get a mesh (vertices and triangles indices) for a 10m error
+    const meshMartini = tile.getMesh(10);
 
-        let response = []
-        response.push(meshMartini)
-        response.push(terrain)
+    let response = []
+    response.push(meshMartini)
+    response.push(terrain)
 
-        const geometry = generateTerrainGeometry(gridSize, tileSize, terrain, martiniOptions)
-
-        initThree(response)
-    }
+    initThree(response)
+  }
 }
 
-function initThree(martini: any){
+function initThree(martini: any) {
   const meshMartini = martini[0];
   const terrain = martini[1];
   const martiniGeo = new THREE.BufferGeometry();
 
-  let i, j;
-
   const vertices = [];
-  for (i = 0, j = 0; i < meshMartini.vertices.length / 2; i++) {
+  for (let i = 0; i < meshMartini.vertices.length / 2; i++) {
     let x = meshMartini.vertices[i * 2],
       y = meshMartini.vertices[i * 2 + 1];
     vertices.push(x);
     vertices.push(terrain[y * 257 + x] / 100);
     vertices.push(y);
   }
-
-  let terrainMaterial = new THREE.MeshStandardMaterial();
 
   martiniGeo.setIndex(new THREE.BufferAttribute(meshMartini.triangles, 1));
   martiniGeo.setAttribute(
@@ -100,21 +91,22 @@ function initThree(martini: any){
 
   const scene = new THREE.Scene();
 
-
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 5, 0);
   controls.update();
-  const texture = new THREE.TextureLoader().load( `https://a.tiles.mapbox.com/v4/mapbox.satellite/${location}@2x.png?access_token=${mapboxToken}` );
+
+  const texture = new THREE.TextureLoader().load(`https://a.tiles.mapbox.com/v4/mapbox.satellite/${location.zoom}/${location.x}/${location.y}@2x.png?access_token=${mapboxToken}`);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set( 1, -1 );
-
+  texture.minFilter = THREE.NearestFilter
+  texture.magFilter = THREE.NearestFilter
+  texture.repeat.set(1, -1);
 
   const material = new THREE.MeshPhongMaterial({
     map: texture,
     // color: '#ffffff',
     // wireframe: true
-    // side: THREE.DoubleSide,
+    side: THREE.DoubleSide,
   });
 
   const geometry = new THREE.Geometry().fromBufferGeometry(martiniGeo)
@@ -122,37 +114,28 @@ function initThree(martini: any){
   geometry.uvsNeedUpdate = true;
   let mesh = new THREE.Mesh(geometry, material);
 
-
-
-
-  // mesh.matrixAutoUpdate = true;
   scene.add(mesh);
 
-
-
-  const skyColor = 0xB1E1FF;  // light blue
-  const groundColor = 0xB97A20;  // brownish orange
+  const skyColor = 0xFFFFFF;
+  const groundColor = 0xAAAAAA;
   const intensity = 1;
   const light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
   scene.add(light);
 
+  light.position.set(220, 199, 164);
 
-  // martiniGeo.index.needsUpdate = true
-  light.position.set( 220, 199, 164 );
-
-  camera.position.set( 220, 199, 164 );
-  camera.lookAt(mesh.position)
+  camera.position.set(220, 199, 164);
 
 
 
   animate()
 
   function animate() {
-    requestAnimationFrame( animate );
+    requestAnimationFrame(animate);
 
     controls.update();
 
-    renderer.render( scene, camera );
+    renderer.render(scene, camera);
 
   }
 }
