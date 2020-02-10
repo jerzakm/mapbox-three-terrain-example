@@ -10,7 +10,6 @@ export function mapUVs(geometry: any) {
       }
     }
     for (var i = 0; i < geometry.faces.length; i++) {
-      const face = geometry.faces[i];
       const faceUVs = geometry.faceVertexUvs[0][i]
       const va = geometry.vertices[geometry.faces[i].a]
       const vb = geometry.vertices[geometry.faces[i].b]

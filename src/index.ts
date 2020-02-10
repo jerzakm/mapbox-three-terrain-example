@@ -1,15 +1,17 @@
 import * as style from './_scss/style'
 import * as THREE from 'three'
-import * as Martini from '@mapbox/martini'
+
+const martini = require('@mapbox/martini')
+
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { WireframeGeometry } from 'three';
 import { fetchImage } from './util';
 import { mapUVs } from './geometry';
-import { decodeTerrain } from './terrain';
+import { decodeTerrain, generateTerrainGeometry } from './terrain';
 import { fetchTerrainTile } from './mapboxTiles';
 
 // set up mesh generator for a certain 2^k+1 grid size
-const martini = new Martini.default(257);
+const martiniInstance = new martini.default(257);
 
 export const mapboxToken = 'pk.eyJ1IjoiamVyemFrbSIsImEiOiJjangxaHF4MGcwN3ZqNGJubzl2Zzdva3N5In0.DRchXs3ESLUuoH9Kh_N-ow'
 const location = {
@@ -45,8 +47,7 @@ async function start() {
     const terrain = decodeTerrain(data, tileSize)
 
     // generate RTIN hierarchy from terrain data (an array of size^2 length)
-    const tile = martini.createTile(terrain);
-
+    const tile = martiniInstance.createTile(terrain);
     // get a mesh (vertices and triangles indices) for a 10m error
     const meshMartini = tile.getMesh(10);
 
@@ -59,29 +60,7 @@ async function start() {
 }
 
 function initThree(martini: any) {
-  const meshMartini = martini[0];
   const terrain = martini[1];
-  const martiniGeo = new THREE.BufferGeometry();
-
-  const vertices = [];
-  for (let i = 0; i < meshMartini.vertices.length / 2; i++) {
-    let x = meshMartini.vertices[i * 2],
-      y = meshMartini.vertices[i * 2 + 1];
-    vertices.push(x);
-    vertices.push(terrain[y * 257 + x] / 100);
-    vertices.push(y);
-  }
-
-  martiniGeo.setIndex(new THREE.BufferAttribute(meshMartini.triangles, 1));
-  martiniGeo.setAttribute(
-    "position",
-    new THREE.BufferAttribute(new Float32Array(vertices), 3)
-  );
-
-  // martiniGeo.attributes.position.needsUpdate = true;
-  martiniGeo.computeVertexNormals();
-  martiniGeo.computeBoundingBox();
-  martiniGeo.normalizeNormals();
 
   const fov = 90;
   const aspect = 2;  // the canvas default
@@ -109,7 +88,9 @@ function initThree(martini: any) {
     side: THREE.DoubleSide,
   });
 
-  const geometry = new THREE.Geometry().fromBufferGeometry(martiniGeo)
+  const geoTest = generateTerrainGeometry(terrain, 257)
+
+  const geometry = new THREE.Geometry().fromBufferGeometry(geoTest)
   mapUVs(geometry)
   geometry.uvsNeedUpdate = true;
   let mesh = new THREE.Mesh(geometry, material);
