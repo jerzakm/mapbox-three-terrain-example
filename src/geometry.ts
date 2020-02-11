@@ -1,6 +1,7 @@
-import { Vector2, Vector3 } from "three";
+import { Vector2, Vector3, BufferGeometry, Geometry } from "three";
 
-export function mapUVs(geometry: any) {
+export const mapUVs = (bufferGeometry: BufferGeometry) => {
+    const geometry = new Geometry().fromBufferGeometry(bufferGeometry)
     if (!geometry.boundingBox) geometry.computeBoundingBox();
     const size = geometry.boundingBox.getSize(new Vector3());
     const min = geometry.boundingBox.min;
@@ -29,4 +30,6 @@ export function mapUVs(geometry: any) {
       faceUVs[2].set((vc[uAxis] - min[uAxis]) / size[uAxis], (vc[vAxis] - min[vAxis]) / size[vAxis])
     }
     geometry.elementsNeedUpdate = geometry.verticesNeedUpdate = true;
+
+    return geometry;
   }

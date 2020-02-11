@@ -79,7 +79,3 @@ export const generateTerrainGeometry = (terrain: Float32Array, size: number) => 
 
   return geometry
 }
-
-export const generateTerrainMesh = () => {
-
-}
