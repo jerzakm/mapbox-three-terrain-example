@@ -63,6 +63,25 @@ async function runMapboxExample() {
   container.style.height = '100vh'
   document.body.appendChild(container)
 
+  const tileImg = await fetchTerrainTile(location.zoom, location.x, location.y)
+
+  const terrain:any = decodeTerrainFromTile(tileImg)
+
+  //geometry width is +1 for better seaming
+  const bufferGeometry = generateTerrainGeometry(terrain, tileImg.width+1)
+  const geometry = mapUVs(bufferGeometry)
+
+  const texture=  makeSatelliteTexture(location.zoom, location.x, location.y, true)
+
+  const material = new MeshPhongMaterial({
+    map: texture,
+    // color: '#ffffff',
+    // wireframe: true
+    side: DoubleSide,
+  });
+
+  const mesh = new Mesh(geometry, material);
+
 
   const map = new mapboxgl.Map({
     container: container,
@@ -89,7 +108,8 @@ async function runMapboxExample() {
     /* Since our 3D model is in real world meters, a scale transform needs to be
     * applied since the CustomLayerInterface expects units in MercatorCoordinates.
     */
-    scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits()*200
+   //https://observablehq.com/@mourner/martin-real-time-rtin-terrain-mesh meters per pixel in martini?
+    scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits()*124.73948277849482
   };
 
     const customLayer: CustomLayerInterface = {
@@ -110,14 +130,9 @@ async function runMapboxExample() {
       this.scene.add(directionalLight2);
 
       // use the three.js GLTF loader to add the 3D model to the three.js scene
-      var loader = new GLTFLoader();
-      loader.load(
-        'https://docs.mapbox.com/mapbox-gl-js/assets/34M_17/34M_17.gltf',
-      function(gltf) {
-      this.scene.add(gltf.scene);
-      }.bind(this)
-      );
       this.map = map;
+
+      this.scene.add(mesh)
 
       // use the Mapbox GL JS map canvas for three.js
       this.renderer = new THREE.WebGLRenderer({
@@ -167,8 +182,18 @@ async function runMapboxExample() {
     };
 
     map.on('style.load', function() {
-      // map.addLayer(customLayer, 'waterway-label');
-      const testLayer = new MapboxThreeLayer(map)
-      map.addLayer(testLayer, 'waterway-label')
+      map.addLayer(customLayer, 'waterway-label');
+      // const testLayer = new MapboxThreeLayer(map)
+      // map.addLayer(testLayer, 'waterway-label')
+      let toggled = true
+      window.addEventListener('click', ()=> {
+        if(toggled){
+          map.removeLayer('3d-model')
+          toggled= false
+        } else {
+          map.addLayer(customLayer, 'waterway-label');
+          toggled = true
+        }
+      })
     });
 }

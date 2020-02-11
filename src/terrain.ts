@@ -63,7 +63,7 @@ export const generateTerrainGeometry = (terrain: Float32Array, size: number) => 
     let x = meshMartini.vertices[i * 2],
       y = meshMartini.vertices[i * 2 + 1];
     vertices.push(x);
-    vertices.push(terrain[y * 257 + x] / 100);
+    vertices.push(terrain[y * size + x] / 100);
     vertices.push(y);
   }
 
