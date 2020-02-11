@@ -6,11 +6,27 @@ export interface MartiniOptions {
   terrainExaggeration: number
 }
 
-export const decodeTerrain = (data: Uint8ClampedArray, tileSize: number) => {
+export const decodeTerrainFromTile = (tileImg: HTMLImageElement) => {
+  // ! todo move all this logic to worker thread
+  const tileSize = tileImg.width
+
+  // 1. Draw terrain on an offscreen canvas
+  const textureCanvas = new OffscreenCanvas(tileSize, tileSize)
+  textureCanvas.height = screen.height
+  textureCanvas.width = screen.width
+  const ctx = textureCanvas.getContext('2d')
+
+  if(!ctx){
+    return
+  }
+  ctx.drawImage(tileImg, 0, 0);
+  const data = ctx.getImageData(0, 0, tileSize, tileSize).data;
+
   const gridSize = tileSize + 1
+
   const terrain = new Float32Array(gridSize * gridSize);
 
-  // decode terrain values
+  // 2. Decode terrain values from rgb terrain tile
   for (let y = 0; y < tileSize; y++) {
     for (let x = 0; x < tileSize; x++) {
       const k = (y * tileSize + x) * 4;
@@ -21,7 +37,7 @@ export const decodeTerrain = (data: Uint8ClampedArray, tileSize: number) => {
       terrain[y * gridSize + x] = (r * 256 * 256 + g * 256.0 + b) / 10.0 - 10000.0;
     }
   }
-  // backfill right and bottom borders
+  // 2.1 backfill right and bottom borders
   for (let x = 0; x < gridSize - 1; x++) {
     terrain[gridSize * (gridSize - 1) + x] = terrain[gridSize * (gridSize - 2) + x];
   }
