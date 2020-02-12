@@ -1,6 +1,7 @@
-import { Camera, Scene, DirectionalLight, WebGLRenderer, Mesh, Matrix4, Vector3 } from "three"
-import { Map, CustomLayerInterface, LngLatLike } from "mapbox-gl"
+import { Camera, Scene, WebGLRenderer, Mesh, Matrix4, Vector3, AmbientLight } from "three"
+import { Map, CustomLayerInterface, LngLatLike, LngLat } from "mapbox-gl"
 import mapboxgl from "mapbox-gl"
+import { ISlippyCoords, coordsToSlippy } from "./util"
 
 export class MapboxThreeLayer implements CustomLayerInterface {
     id = '3d-model'
@@ -11,9 +12,10 @@ export class MapboxThreeLayer implements CustomLayerInterface {
     scene: Scene
     map: Map
     modelTransform: any
+    slippyOrigin: ISlippyCoords
     renderer?: WebGLRenderer
 
-    constructor(map: Map, mesh: Mesh, modelOrigin: LngLatLike) {
+    constructor(map: Map, mesh: Mesh, modelOrigin: LngLat) {
         this.map = map
         this.camera = new Camera()
         this.scene = new Scene()
@@ -28,6 +30,8 @@ export class MapboxThreeLayer implements CustomLayerInterface {
 
         const modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(modelOrigin,modelAltitude);
 
+        this.slippyOrigin = coordsToSlippy(modelOrigin.lat, modelOrigin.lng, 10)
+
         this.modelTransform = {
             translateX: modelAsMercatorCoordinate.x,
             translateY: modelAsMercatorCoordinate.y,
@@ -41,17 +45,19 @@ export class MapboxThreeLayer implements CustomLayerInterface {
             // https://observablehq.com/@mourner/martin-real-time-rtin-terrain-mesh meters per pixel in martini?
             scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits()*124.73948277849482
         };
-
     }
 
     private makeLights() {
-        const directionalLight = new DirectionalLight(0xffffff);
-        directionalLight.position.set(0, -70, 100).normalize();
-        this.scene.add(directionalLight);
+        // const directionalLight = new DirectionalLight(0xffffff);
+        // directionalLight.position.set(0, -70, 100).normalize();
+        // this.scene.add(directionalLight);
 
-        const directionalLight2 = new DirectionalLight(0xffffff);
-        directionalLight2.position.set(0, 70, 100).normalize();
-        this.scene.add(directionalLight2);
+        // const directionalLight2 = new DirectionalLight(0xffffff);
+        // directionalLight2.position.set(0, 70, 100).normalize();
+        // this.scene.add(directionalLight2);
+
+        const globalLight = new AmbientLight()
+        this.scene.add(globalLight)
     }
 
     onAdd(map: Map, gl: WebGLRenderingContext) {
@@ -85,7 +91,6 @@ export class MapboxThreeLayer implements CustomLayerInterface {
         new Vector3(0, 0, 1),
         this.modelTransform.rotateZ
         );
-
         var m = new Matrix4().fromArray(matrix);
         var l = new Matrix4()
         .makeTranslation(
@@ -111,5 +116,15 @@ export class MapboxThreeLayer implements CustomLayerInterface {
         this.renderer.state.reset();
         this.renderer.render(this.scene, this.camera);
         this.map.triggerRepaint();
+    }
+
+    addTile(mesh: Mesh, slippyCoords: ISlippyCoords, size: number){
+        this.scene.add(mesh)
+        console.log(this.slippyOrigin)
+        mesh.position.set(
+            (slippyCoords.x-this.slippyOrigin.x)*256,
+            (slippyCoords.y-this.slippyOrigin.y)*256,
+            this.slippyOrigin.zoom
+            )
     }
 }

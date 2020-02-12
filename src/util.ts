@@ -17,10 +17,17 @@ export const slippyToCoords = (x: number, y:number, zoom: number) => {
   return [longitude, latitude]
 }
 
-export const coordsToSlippy = (latitude: number, longitude:number, zoom: number) => {
+export const coordsToSlippy = (latitude: number, longitude:number, zoom: number):ISlippyCoords => {
   const latitudeRad = latitude/(180/Math.PI)
   const n = 2 **zoom
-  const xTile = Math.floor((longitude+180)/360*n)
-  const yTile = Math.floor((1-Math.asinh(Math.tan(latitudeRad))/Math.PI)/2.0*n)
-  return {xTile, yTile}
+  const x = Math.floor((longitude+180)/360*n)
+  const y = Math.floor((1-Math.asinh(Math.tan(latitudeRad))/Math.PI)/2.0*n)
+  return {x,y,zoom}
+}
+
+export interface ISlippyCoords {
+  x: number
+  y: number
+  zoom: number
+
 }
