@@ -54,7 +54,7 @@ export const generateTerrainGeometry = (terrain: Float32Array, size: number) => 
   const tile = martiniInstance.createTile(terrain);
 
   //! todo terrain error as param
-  const meshMartini = tile.getMesh(10);
+  const meshMartini = tile.getMesh(80);
 
   const geometry = new BufferGeometry();
 

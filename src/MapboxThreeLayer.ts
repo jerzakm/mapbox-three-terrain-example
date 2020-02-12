@@ -1,7 +1,8 @@
-import { Camera, Scene, WebGLRenderer, Mesh, Matrix4, Vector3, AmbientLight } from "three"
+import { Camera, Scene, WebGLRenderer, Mesh, Matrix4, Vector3, AmbientLight, HemisphereLight, DirectionalLight } from "three"
 import { Map, CustomLayerInterface, LngLatLike, LngLat } from "mapbox-gl"
 import mapboxgl from "mapbox-gl"
-import { ISlippyCoords, coordsToSlippy } from "./util"
+import { ISlippyCoords, coordsToSlippy, slippyToCoords } from "./util"
+import { createMesh } from "."
 
 export class MapboxThreeLayer implements CustomLayerInterface {
     id = '3d-model'
@@ -48,16 +49,19 @@ export class MapboxThreeLayer implements CustomLayerInterface {
     }
 
     private makeLights() {
-        // const directionalLight = new DirectionalLight(0xffffff);
-        // directionalLight.position.set(0, -70, 100).normalize();
-        // this.scene.add(directionalLight);
+        const directionalLight = new DirectionalLight(0xffffff);
+        directionalLight.position.set(0, -70, 100).normalize();
+        this.scene.add(directionalLight);
 
-        // const directionalLight2 = new DirectionalLight(0xffffff);
-        // directionalLight2.position.set(0, 70, 100).normalize();
-        // this.scene.add(directionalLight2);
+        const directionalLight2 = new DirectionalLight(0xffffff);
+        directionalLight2.position.set(0, 70, 100).normalize();
+        this.scene.add(directionalLight2);
 
-        const globalLight = new AmbientLight()
-        this.scene.add(globalLight)
+        // const globalLight = new AmbientLight()
+        // this.scene.add(globalLight)
+
+        // const hemiLight = new HemisphereLight()
+        // this.scene.add(hemiLight)
     }
 
     onAdd(map: Map, gl: WebGLRenderingContext) {
@@ -74,6 +78,8 @@ export class MapboxThreeLayer implements CustomLayerInterface {
             context: gl,
             antialias: true,
         })
+
+        this.fillBoundsWithTiles()
 
         this.renderer.autoClear = false
     }
@@ -118,13 +124,42 @@ export class MapboxThreeLayer implements CustomLayerInterface {
         this.map.triggerRepaint();
     }
 
+    private async fillBoundsWithTiles() {
+        const nw = this.map.getBounds().getNorthWest()
+        const se = this.map.getBounds().getSouthEast()
+
+        const nwTile = coordsToSlippy(nw.lat, nw.lng, 10)
+
+        let maxX = nwTile.x
+        let maxY = nwTile.y
+
+        while(true){
+            const sc = slippyToCoords(maxX+1, maxY+1, 10)
+            const contains = this.map.getBounds().contains(sc)
+            if(contains){
+                maxX+=1
+                maxY+=1
+            } else {
+                break
+            }
+        }
+
+        const sArray: ISlippyCoords[] = []
+
+        for(let j = nwTile.y; j<=maxY;j++) {
+            for(let i = nwTile.x; i<=maxX;i++) {
+                const mesh = await createMesh({x:i, y:j, zoom:10})
+                this.addTile(mesh, {x:i, y:j, zoom:10}, 256)
+            }
+        }
+    }
+
     addTile(mesh: Mesh, slippyCoords: ISlippyCoords, size: number){
         this.scene.add(mesh)
-        console.log(this.slippyOrigin)
         mesh.position.set(
-            (slippyCoords.x-this.slippyOrigin.x)*256,
-            (slippyCoords.y-this.slippyOrigin.y)*256,
-            this.slippyOrigin.zoom
+            (slippyCoords.x-this.slippyOrigin.x)*256+this.modelTransform.translateX,
+            0,
+            (slippyCoords.y-this.slippyOrigin.y)*256+this.modelTransform.translateY,
             )
     }
 }

@@ -48,6 +48,29 @@ async function runThreeExample() {
   scene.add(mesh)
 }
 
+export async function createMesh(location: ISlippyCoords) {
+  const tileImg = await fetchTerrainTile(location.zoom, location.x, location.y)
+
+  const terrain:any = decodeTerrainFromTile(tileImg)
+
+  //geometry width is +1 for better seaming
+  const bufferGeometry = generateTerrainGeometry(terrain, tileImg.width+1)
+  const geometry = mapUVs(bufferGeometry)
+
+  const texture=  makeSatelliteTexture(location.zoom, location.x, location.y, true)
+
+  const material = new MeshPhongMaterial({
+    map: texture,
+    // color: '#ffffff',
+    // wireframe: true,
+    side: DoubleSide,
+  });
+
+  const mesh = new Mesh(geometry, material);
+
+  return mesh
+}
+
 async function runMapboxExample() {
   // based on https://docs.mapbox.com/mapbox-gl-js/example/add-3d-model/
 
@@ -60,29 +83,6 @@ async function runMapboxExample() {
   container.style.width = '100vw'
   container.style.height = '100vh'
   document.body.appendChild(container)
-
-  async function createMesh(location: ISlippyCoords) {
-    const tileImg = await fetchTerrainTile(location.zoom, location.x, location.y)
-
-    const terrain:any = decodeTerrainFromTile(tileImg)
-
-    //geometry width is +1 for better seaming
-    const bufferGeometry = generateTerrainGeometry(terrain, tileImg.width+1)
-    const geometry = mapUVs(bufferGeometry)
-
-    const texture=  makeSatelliteTexture(location.zoom, location.x, location.y, true)
-
-    const material = new MeshPhongMaterial({
-      map: texture,
-      // color: '#ffffff',
-      // wireframe: true
-      side: DoubleSide,
-    });
-
-    const mesh = new Mesh(geometry, material);
-
-    return mesh
-  }
 
   const mesh = await createMesh(location)
 
