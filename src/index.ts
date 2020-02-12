@@ -60,8 +60,8 @@ export async function createMesh(location: ISlippyCoords) {
   const texture=  makeSatelliteTexture(location.zoom, location.x, location.y, true)
 
   const material = new MeshPhongMaterial({
-    map: texture,
-    // color: '#ffffff',
+    // map: texture,
+    color: '#ffffff',
     // wireframe: true,
     side: DoubleSide,
   });
@@ -91,22 +91,15 @@ async function runMapboxExample() {
     container: container,
     style: 'mapbox://styles/mapbox/light-v10'
   });
-  map.setZoom(8);
+  map.setZoom(9);
   map.setCenter(latLng);
-
-  const location2: ISlippyCoords = {
-    zoom: 10,
-    x: 905,
-    y: 404
-  }
 
   map.on('style.load', async function() {
     const testLayer = new MapboxThreeLayer(map, mesh, latLng)
     map.addLayer(testLayer, 'waterway-label')
-    const mesh2 = await createMesh(location2)
-    testLayer.addTile(mesh2, location2, 256)
   let toggled = true
     window.addEventListener('click', async ()=> {
+      testLayer.fillBoundsWithTiles()
       if(toggled){
         // map.removeLayer('3d-model')
         toggled= false

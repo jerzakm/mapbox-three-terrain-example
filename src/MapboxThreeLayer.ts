@@ -8,6 +8,7 @@ export class MapboxThreeLayer implements CustomLayerInterface {
     id = '3d-model'
     type: "custom" = "custom"
     renderingMode: "3d" | "2d" | undefined = "3d"
+    cache: ITileCacheEntry[] = []
 
     camera: Camera
     scene: Scene
@@ -68,20 +69,12 @@ export class MapboxThreeLayer implements CustomLayerInterface {
         this.renderer = new WebGLRenderer({
             canvas: map.getCanvas(),
             context: gl,
-            antialias: true
+            antialias: false
             });
 
         this.renderer.autoClear = false;
 
-        this.renderer = new WebGLRenderer({
-            canvas: this.map.getCanvas(),
-            context: gl,
-            antialias: true,
-        })
-
         this.fillBoundsWithTiles()
-
-        this.renderer.autoClear = false
     }
 
     render(gl: WebGLRenderingContext, matrix: any) {
@@ -121,10 +114,10 @@ export class MapboxThreeLayer implements CustomLayerInterface {
 
         this.renderer.state.reset();
         this.renderer.render(this.scene, this.camera);
-        this.map.triggerRepaint();
+        // this.map.triggerRepaint();
     }
 
-    private async fillBoundsWithTiles() {
+    async fillBoundsWithTiles() {
         const nw = this.map.getBounds().getNorthWest()
         const se = this.map.getBounds().getSouthEast()
 
@@ -138,20 +131,36 @@ export class MapboxThreeLayer implements CustomLayerInterface {
             const contains = this.map.getBounds().contains(sc)
             if(contains){
                 maxX+=1
+            } else {
+                break
+            }
+        }
+        while(true){
+            const sc = slippyToCoords(nwTile.x+1, maxY+1, 10)
+            const contains = this.map.getBounds().contains(sc)
+            if(contains){
                 maxY+=1
             } else {
                 break
             }
         }
 
-        const sArray: ISlippyCoords[] = []
-
         for(let j = nwTile.y; j<=maxY;j++) {
             for(let i = nwTile.x; i<=maxX;i++) {
-                const mesh = await createMesh({x:i, y:j, zoom:10})
-                this.addTile(mesh, {x:i, y:j, zoom:10}, 256)
+                const cacheResult = this.cache.find((value)=> {
+                    return value.coords.x==i&&value.coords.y==j&&value.coords.zoom==10
+                })
+                if(!cacheResult) {
+                    console.log('no cache for entry')
+                    const mesh = await createMesh({x:i, y:j, zoom:10})
+                    this.addTile(mesh, {x:i, y:j, zoom:10}, 256)
+                    this.cache.push({mesh, visible:true, coords:{x:i, y:j, zoom:10}})
+                } else {
+
+                }
             }
         }
+        console.log(this.cache)
     }
 
     addTile(mesh: Mesh, slippyCoords: ISlippyCoords, size: number){
@@ -162,4 +171,10 @@ export class MapboxThreeLayer implements CustomLayerInterface {
             (slippyCoords.y-this.slippyOrigin.y)*256+this.modelTransform.translateY,
             )
     }
+}
+
+interface ITileCacheEntry {
+    mesh: Mesh
+    visible: boolean
+    coords: ISlippyCoords
 }
