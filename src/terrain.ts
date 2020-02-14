@@ -48,7 +48,7 @@ export const decodeTerrainFromTile = (tileImg: HTMLImageElement) => {
   return terrain
 }
 
-export const generateTerrainGeometry = (terrain: Float32Array, size: number) => {
+export const genMartiniTerrain = (terrain: Float32Array, size: number) => {
   const martiniInstance = new martini.default(size);
 
   const tile = martiniInstance.createTile(terrain);

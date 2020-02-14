@@ -1,15 +1,15 @@
 import * as style from './_scss/style'
 
 import { mapUVs } from './geometry';
-import { decodeTerrainFromTile, generateTerrainGeometry } from './terrain';
+import { decodeTerrainFromTile, genMartiniTerrain } from './terrain';
 import { fetchTerrainTile, makeSatelliteTexture } from './mapboxTiles';
 import { MeshPhongMaterial, Mesh, DoubleSide, Camera } from 'three';
 import { initThreeCanvasScene } from './threeSetup';
 import mapboxgl, { CustomLayerInterface, LngLat } from "mapbox-gl";
 import { slippyToCoords, coordsToSlippy, ISlippyCoords } from './util';
 
-import * as THREE from 'three'
 import { MapboxThreeLayer } from './MapboxThreeLayer';
+import { singleSimpleTileExample } from './examples/00_singleSimpleTile';
 
 export const mapboxToken = 'pk.eyJ1IjoiamVyemFrbSIsImEiOiJjangxaHF4MGcwN3ZqNGJubzl2Zzdva3N5In0.DRchXs3ESLUuoH9Kh_N-ow'
 
@@ -19,34 +19,8 @@ const location: ISlippyCoords = {
   y: 404
 }
 
-// runThreeExample()
-runMapboxExample()
-
-async function runThreeExample() {
-
-  const tileImg = await fetchTerrainTile(location.zoom, location.x, location.y)
-
-  const terrain: any = decodeTerrainFromTile(tileImg)
-
-  //geometry width is +1 for better seaming
-  const bufferGeometry = generateTerrainGeometry(terrain, tileImg.width + 1)
-  const geometry = mapUVs(bufferGeometry)
-
-  const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
-
-  const material = new MeshPhongMaterial({
-    map: texture,
-    // color: '#ffffff',
-    // wireframe: true
-    side: DoubleSide,
-  });
-
-  const mesh = new Mesh(geometry, material);
-
-  const scene = initThreeCanvasScene()
-
-  scene.add(mesh)
-}
+// example 01, just one terrain tile with satellite texture
+singleSimpleTileExample()
 
 export async function createMesh(location: ISlippyCoords) {
   const tileImg = await fetchTerrainTile(location.zoom, location.x, location.y)
@@ -54,7 +28,7 @@ export async function createMesh(location: ISlippyCoords) {
   const terrain: any = decodeTerrainFromTile(tileImg)
 
   //geometry width is +1 for better seaming
-  const bufferGeometry = generateTerrainGeometry(terrain, tileImg.width + 1)
+  const bufferGeometry = genMartiniTerrain(terrain, tileImg.width + 1)
   const geometry = mapUVs(bufferGeometry)
 
   const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
