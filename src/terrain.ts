@@ -16,7 +16,7 @@ export const decodeTerrainFromTile = (tileImg: HTMLImageElement) => {
   textureCanvas.width = screen.width
   const ctx = textureCanvas.getContext('2d')
 
-  if(!ctx){
+  if (!ctx) {
     return
   }
   ctx.drawImage(tileImg, 0, 0);
@@ -54,7 +54,7 @@ export const generateTerrainGeometry = (terrain: Float32Array, size: number) => 
   const tile = martiniInstance.createTile(terrain);
 
   //! todo terrain error as param
-  const meshMartini = tile.getMesh(150);
+  const meshMartini = tile.getMesh(10);
 
   const geometry = new BufferGeometry();
 

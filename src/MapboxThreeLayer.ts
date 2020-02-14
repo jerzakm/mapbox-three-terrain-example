@@ -17,12 +17,11 @@ export class MapboxThreeLayer implements CustomLayerInterface {
     slippyOrigin: ISlippyCoords
     renderer?: WebGLRenderer
 
-    constructor(map: Map, mesh: Mesh, modelOrigin: LngLat) {
+    constructor(map: Map, modelOrigin: LngLat) {
         this.map = map
         this.camera = new Camera()
         this.scene = new Scene()
 
-        this.scene.add(mesh)
 
         // create two three.js lights to illuminate the model
         this.makeLights()
@@ -30,7 +29,7 @@ export class MapboxThreeLayer implements CustomLayerInterface {
         const modelAltitude = 0;
         const modelRotate = [Math.PI / 2, 0, 0];
 
-        const modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(modelOrigin,modelAltitude);
+        const modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(modelOrigin, modelAltitude);
 
         this.slippyOrigin = coordsToSlippy(modelOrigin.lat, modelOrigin.lng, 10)
 
@@ -45,14 +44,14 @@ export class MapboxThreeLayer implements CustomLayerInterface {
             * applied since the CustomLayerInterface expects units in MercatorCoordinates.
             */
             // https://observablehq.com/@mourner/martin-real-time-rtin-terrain-mesh meters per pixel in martini?
-            scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits()*124.73948277849482
+            scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits() * 124.73948277849482
         };
     }
 
     private makeLights() {
-        const directionalLight = new DirectionalLight(0xffffff);
-        directionalLight.position.set(0, -70, 100).normalize();
-        this.scene.add(directionalLight);
+        // const directionalLight = new DirectionalLight(0xffffff);
+        // directionalLight.position.set(0, -70, 100).normalize();
+        // this.scene.add(directionalLight);
 
         const directionalLight2 = new DirectionalLight(0xffffff);
         directionalLight2.position.set(0, 70, 100).normalize();
@@ -70,7 +69,7 @@ export class MapboxThreeLayer implements CustomLayerInterface {
             canvas: map.getCanvas(),
             context: gl,
             antialias: false
-            });
+        });
 
         this.renderer.autoClear = false;
 
@@ -79,42 +78,42 @@ export class MapboxThreeLayer implements CustomLayerInterface {
 
     render(gl: WebGLRenderingContext, matrix: any) {
         var rotationX = new Matrix4().makeRotationAxis(
-        new Vector3(1, 0, 0),
-        this.modelTransform.rotateX
+            new Vector3(1, 0, 0),
+            this.modelTransform.rotateX
         );
         var rotationY = new Matrix4().makeRotationAxis(
-        new Vector3(0, 1, 0),
-        this.modelTransform.rotateY
+            new Vector3(0, 1, 0),
+            this.modelTransform.rotateY
         );
         var rotationZ = new Matrix4().makeRotationAxis(
-        new Vector3(0, 0, 1),
-        this.modelTransform.rotateZ
+            new Vector3(0, 0, 1),
+            this.modelTransform.rotateZ
         );
         var m = new Matrix4().fromArray(matrix);
         var l = new Matrix4()
-        .makeTranslation(
-            this.modelTransform.translateX,
-            this.modelTransform.translateY,
-            this.modelTransform.translateZ
-        )
-        .scale(
-        new Vector3(
-            this.modelTransform.scale,
-        -this.modelTransform.scale,
-        this.modelTransform.scale
-        )
-        )
-        .multiply(rotationX)
-        .multiply(rotationY)
-        .multiply(rotationZ);
+            .makeTranslation(
+                this.modelTransform.translateX,
+                this.modelTransform.translateY,
+                this.modelTransform.translateZ
+            )
+            .scale(
+                new Vector3(
+                    this.modelTransform.scale,
+                    -this.modelTransform.scale,
+                    this.modelTransform.scale
+                )
+            )
+            .multiply(rotationX)
+            .multiply(rotationY)
+            .multiply(rotationZ);
 
         this.camera.projectionMatrix = m.multiply(l);
 
-        if(!this.renderer) {return}
+        if (!this.renderer) { return }
 
         this.renderer.state.reset();
         this.renderer.render(this.scene, this.camera);
-        // this.map.triggerRepaint();
+        this.map.triggerRepaint();
     }
 
     async fillBoundsWithTiles() {
@@ -126,35 +125,35 @@ export class MapboxThreeLayer implements CustomLayerInterface {
         let maxX = nwTile.x
         let maxY = nwTile.y
 
-        while(true){
-            const sc = slippyToCoords(maxX+1, maxY+1, 10)
+        while (true) {
+            const sc = slippyToCoords(maxX + 1, maxY + 1, 10)
             const contains = this.map.getBounds().contains(sc)
-            if(contains){
-                maxX+=1
+            if (contains) {
+                maxX += 1
             } else {
                 break
             }
         }
-        while(true){
-            const sc = slippyToCoords(nwTile.x+1, maxY+1, 10)
+        while (true) {
+            const sc = slippyToCoords(nwTile.x + 1, maxY + 1, 10)
             const contains = this.map.getBounds().contains(sc)
-            if(contains){
-                maxY+=1
+            if (contains) {
+                maxY += 1
             } else {
                 break
             }
         }
 
-        for(let j = nwTile.y; j<=maxY;j++) {
-            for(let i = nwTile.x; i<=maxX;i++) {
-                const cacheResult = this.cache.find((value)=> {
-                    return value.coords.x==i&&value.coords.y==j&&value.coords.zoom==10
+        for (let j = nwTile.y; j <= maxY; j++) {
+            for (let i = nwTile.x; i <= maxX; i++) {
+                const cacheResult = this.cache.find((value) => {
+                    return value.coords.x == i && value.coords.y == j && value.coords.zoom == 10
                 })
-                if(!cacheResult) {
+                if (!cacheResult) {
                     console.log('no cache for entry')
-                    const mesh = await createMesh({x:i, y:j, zoom:10})
-                    this.addTile(mesh, {x:i, y:j, zoom:10}, 256)
-                    this.cache.push({mesh, visible:true, coords:{x:i, y:j, zoom:10}})
+                    const mesh = await createMesh({ x: i, y: j, zoom: 10 })
+                    this.addTile(mesh, { x: i, y: j, zoom: 10 }, 256)
+                    this.cache.push({ mesh, visible: true, coords: { x: i, y: j, zoom: 10 } })
                 } else {
 
                 }
@@ -163,13 +162,13 @@ export class MapboxThreeLayer implements CustomLayerInterface {
         console.log(this.cache)
     }
 
-    addTile(mesh: Mesh, slippyCoords: ISlippyCoords, size: number){
+    addTile(mesh: Mesh, slippyCoords: ISlippyCoords, size: number) {
         this.scene.add(mesh)
         mesh.position.set(
-            (slippyCoords.x-this.slippyOrigin.x)*256+this.modelTransform.translateX,
+            (slippyCoords.x - this.slippyOrigin.x) * 256 + this.modelTransform.translateX,
             0,
-            (slippyCoords.y-this.slippyOrigin.y)*256+this.modelTransform.translateY,
-            )
+            (slippyCoords.y - this.slippyOrigin.y) * 256 + this.modelTransform.translateY,
+        )
     }
 }
 
