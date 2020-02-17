@@ -22,6 +22,7 @@
   "homepage": "https://github.com/jerzakm/mapbox-three-terrain-example#readme",
   "dependencies": {
     "@mapbox/martini": "^0.2.0",
+    "delatin": "^0.2.0",
     "mapbox-gl": "^1.7.0",
     "three": "^0.113.2"
   },

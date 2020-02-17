@@ -1,7 +1,7 @@
 import * as style from './_scss/style'
 
 import { mapUVs } from './geometry';
-import { decodeTerrainFromTile, generateTerrainGeometry } from './terrain';
+import { decodeTerrainFromTile, generateMartiniGeometry } from './terrain';
 import { fetchTerrainTile, makeSatelliteTexture } from './mapboxTiles';
 import { MeshPhongMaterial, Mesh, DoubleSide, Camera } from 'three';
 import { initThreeCanvasScene } from './threeSetup';
@@ -10,6 +10,7 @@ import { slippyToCoords, coordsToSlippy, ISlippyCoords } from './util';
 
 import * as THREE from 'three'
 import { MapboxThreeLayer } from './MapboxThreeLayer';
+import { runMeshGenCompare } from './meshGenCompare';
 
 export const mapboxToken = 'pk.eyJ1IjoiamVyemFrbSIsImEiOiJjangxaHF4MGcwN3ZqNGJubzl2Zzdva3N5In0.DRchXs3ESLUuoH9Kh_N-ow'
 
@@ -20,7 +21,8 @@ const location: ISlippyCoords = {
 }
 
 // runThreeExample()
-runMapboxExample()
+// runMapboxExample()
+runMeshGenCompare()
 
 async function runThreeExample() {
 
@@ -29,7 +31,7 @@ async function runThreeExample() {
   const terrain: any = decodeTerrainFromTile(tileImg)
 
   //geometry width is +1 for better seaming
-  const bufferGeometry = generateTerrainGeometry(terrain, tileImg.width + 1)
+  const bufferGeometry = generateMartiniGeometry(terrain, tileImg.width + 1)
   const geometry = mapUVs(bufferGeometry)
 
   const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
@@ -54,7 +56,7 @@ export async function createMesh(location: ISlippyCoords) {
   const terrain: any = decodeTerrainFromTile(tileImg)
 
   //geometry width is +1 for better seaming
-  const bufferGeometry = generateTerrainGeometry(terrain, tileImg.width + 1)
+  const bufferGeometry = generateMartiniGeometry(terrain, tileImg.width + 1)
   const geometry = mapUVs(bufferGeometry)
 
   const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)

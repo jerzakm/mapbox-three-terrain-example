@@ -48,17 +48,18 @@ export const decodeTerrainFromTile = (tileImg: HTMLImageElement) => {
   return terrain
 }
 
-export const generateTerrainGeometry = (terrain: Float32Array, size: number) => {
+export const generateMartiniGeometry = (terrain: Float32Array, size: number, error:number) => {
   const martiniInstance = new martini.default(size);
 
   const tile = martiniInstance.createTile(terrain);
 
   //! todo terrain error as param
-  const meshMartini = tile.getMesh(10);
+  const meshMartini = tile.getMesh(error);
 
   const geometry = new BufferGeometry();
 
   const vertices = [];
+  console.log(meshMartini)
   for (let i = 0; i < meshMartini.vertices.length / 2; i++) {
     let x = meshMartini.vertices[i * 2],
       y = meshMartini.vertices[i * 2 + 1];
