@@ -6,7 +6,7 @@ import { decodeTerrainFromTile, generateMartiniGeometry } from "./terrain"
 
 import { mapUVs } from "./geometry"
 
-import { MeshPhongMaterial, DoubleSide, Mesh, BufferGeometry, BufferAttribute, AmbientLight } from "three"
+import { MeshPhongMaterial, DoubleSide, Mesh, BufferGeometry, BufferAttribute, AmbientLight, HemisphereLight } from "three"
 
 import { initThreeCanvasScene } from "./threeSetup"
 import { ISlippyCoords } from "./util"
@@ -26,14 +26,14 @@ export const runMeshGenCompare = async () => {
     const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
     const material = new MeshPhongMaterial({
       // map: texture,
-      color: '#121212',
+      color: '#888888',
       wireframe: true,
       side: DoubleSide
     });
 
     const scene = initThreeCanvasScene()
 
-    const maxError = 30
+    const maxError = 10
 
     const tinBufferGeo = generateDelatinGeometry(terrain, tileImg.width+1, maxError)
     const tinGeo = mapUVs(tinBufferGeo)
@@ -46,7 +46,7 @@ export const runMeshGenCompare = async () => {
     martiniMesh.position.set(0,0,257)
     scene.add(martiniMesh)
 
-    scene.add(new AmbientLight('#ffffff', 5))
+    scene.add(new HemisphereLight('#999999', '#ccffcc', 0.1))
 
 }
 
