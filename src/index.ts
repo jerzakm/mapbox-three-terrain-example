@@ -31,7 +31,7 @@ async function runThreeExample() {
   const terrain: any = decodeTerrainFromTile(tileImg)
 
   //geometry width is +1 for better seaming
-  const bufferGeometry = generateMartiniGeometry(terrain, tileImg.width + 1)
+  const bufferGeometry = generateMartiniGeometry(terrain, tileImg.width + 1, 50)
   const geometry = mapUVs(bufferGeometry)
 
   const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
@@ -56,7 +56,7 @@ export async function createMesh(location: ISlippyCoords) {
   const terrain: any = decodeTerrainFromTile(tileImg)
 
   //geometry width is +1 for better seaming
-  const bufferGeometry = generateMartiniGeometry(terrain, tileImg.width + 1)
+  const bufferGeometry = generateMartiniGeometry(terrain, tileImg.width + 1, 50)
   const geometry = mapUVs(bufferGeometry)
 
   const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
