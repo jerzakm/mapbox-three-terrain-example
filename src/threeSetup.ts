@@ -21,7 +21,6 @@ export const initThreeCanvasScene = () => {
     const scene = new Scene();
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 5, 0);
     controls.update();
 
     const skyColor = 0xFFFFFF;
@@ -45,6 +44,6 @@ export const initThreeCanvasScene = () => {
 
     }
 
-    return scene
+    return {renderer, scene, camera}
   }
 

@@ -1,14 +1,9 @@
-import { fetchTerrainTile, makeSatelliteTexture } from "./mapboxTiles"
-
-import { decodeTerrainFromTile, generateMartiniGeometry, generateDelatinGeometry } from "./terrain"
-
-import { mapUVs } from "./geometry"
-
-import { MeshPhongMaterial, DoubleSide, Mesh, BufferGeometry, BufferAttribute, AmbientLight, HemisphereLight, TextGeometry, FontLoader } from "three"
-
-import { initThreeCanvasScene } from "./threeSetup"
-import { ISlippyCoords } from "./util"
-import mapboxgl, { CustomLayerInterface, LngLat } from "mapbox-gl";
+import { ISlippyCoords } from "../util";
+import { fetchTerrainTile, makeSatelliteTexture } from "../mapboxTiles";
+import { decodeTerrainFromTile, generateDelatinGeometry, generateMartiniGeometry } from "../terrain";
+import { MeshPhongMaterial, DoubleSide, Mesh, HemisphereLight, FontLoader, TextGeometry, Vector3 } from "three";
+import { initThreeCanvasScene } from "../threeSetup";
+import { mapUVs } from "../geometry";
 
 export const runMeshGenCompare = async () => {
   const location: ISlippyCoords = {
@@ -29,7 +24,9 @@ export const runMeshGenCompare = async () => {
   });
   const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
 
+
   window.addEventListener('keydown', (e)=> {
+    console.log(camera)
     if(e.key=='w'){
       // toggle wireframe
       material.wireframe? material.wireframe = false : material.wireframe = true
@@ -42,7 +39,7 @@ export const runMeshGenCompare = async () => {
     }
   })
 
-  const scene = initThreeCanvasScene()
+  const {renderer,scene,camera} = initThreeCanvasScene()
 
   const maxError = 10
 

@@ -10,7 +10,8 @@ import { slippyToCoords, coordsToSlippy, ISlippyCoords } from './util';
 
 import * as THREE from 'three'
 import { MapboxThreeLayer } from './MapboxThreeLayer';
-import { runMeshGenCompare } from './meshGenCompare';
+import { runMeshGenCompare } from './examples/02_meshGenCompare';
+import { runSingleTileExample } from './examples/01_singleTileExample';
 
 export const mapboxToken = 'pk.eyJ1IjoiamVyemFrbSIsImEiOiJjangxaHF4MGcwN3ZqNGJubzl2Zzdva3N5In0.DRchXs3ESLUuoH9Kh_N-ow'
 
@@ -20,35 +21,11 @@ const location: ISlippyCoords = {
   y: 404
 }
 
-// runThreeExample()
-// runMapboxExample()
-runMeshGenCompare()
+//01
+runSingleTileExample()
 
-async function runThreeExample() {
-
-  const tileImg = await fetchTerrainTile(location.zoom, location.x, location.y)
-
-  const terrain: any = decodeTerrainFromTile(tileImg)
-
-  //geometry width is +1 for better seaming
-  const bufferGeometry = generateMartiniGeometry(terrain, tileImg.width + 1, 50)
-  const geometry = mapUVs(bufferGeometry)
-
-  const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
-
-  const material = new MeshPhongMaterial({
-    map: texture,
-    // color: '#ffffff',
-    // wireframe: true
-    side: DoubleSide,
-  });
-
-  const mesh = new Mesh(geometry, material);
-
-  const scene = initThreeCanvasScene()
-
-  scene.add(mesh)
-}
+// 02
+// runMeshGenCompare()
 
 export async function createMesh(location: ISlippyCoords) {
   const tileImg = await fetchTerrainTile(location.zoom, location.x, location.y)
