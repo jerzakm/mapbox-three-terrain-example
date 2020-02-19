@@ -12,6 +12,7 @@ import * as THREE from 'three'
 import { MapboxThreeLayer } from './MapboxThreeLayer';
 import { runMeshGenCompare } from './examples/02_meshGenCompare';
 import { runSingleTileExample } from './examples/01_singleTileExample';
+import { runFillScreenExample } from './examples/03_fillScreenExample';
 
 export const mapboxToken = 'pk.eyJ1IjoiamVyemFrbSIsImEiOiJjangxaHF4MGcwN3ZqNGJubzl2Zzdva3N5In0.DRchXs3ESLUuoH9Kh_N-ow'
 
@@ -22,10 +23,13 @@ const location: ISlippyCoords = {
 }
 
 //01
-runSingleTileExample()
+// runSingleTileExample()
 
 // 02
 // runMeshGenCompare()
+
+// 03
+runFillScreenExample()
 
 export async function createMesh(location: ISlippyCoords) {
   const tileImg = await fetchTerrainTile(location.zoom, location.x, location.y)

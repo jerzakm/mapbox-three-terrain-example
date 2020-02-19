@@ -1,13 +1,10 @@
-import { fetchTerrainTile, makeSatelliteTexture } from "./mapboxTiles"
-
-import { decodeTerrainFromTile, generateMartiniGeometry, generateDelatinGeometry } from "./terrain"
-
-import { mapUVs } from "./geometry"
-
-import { MeshPhongMaterial, DoubleSide, Mesh, BufferGeometry, BufferAttribute, AmbientLight, HemisphereLight, TextGeometry, FontLoader, WebGLRenderer, PerspectiveCamera, Scene, Frustum, Matrix4, Vector3, BoxGeometry, MeshBasicMaterial, Raycaster } from "three"
-
-import { ISlippyCoords } from "./util"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
+import { ISlippyCoords } from "../util";
+import { fetchTerrainTile, makeSatelliteTexture } from "../mapboxTiles";
+import { decodeTerrainFromTile, generateDelatinGeometry } from "../terrain";
+import { MeshPhongMaterial, DoubleSide, WebGLRenderer, PerspectiveCamera, Scene, HemisphereLight, Mesh, Frustum, Matrix4, Vector3, BoxGeometry, MeshBasicMaterial } from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { mapUVs } from "../geometry";
+import { initThreeCanvasScene } from "../threeSetup";
 
 export const runFillScreenExample = async () => {
   const location: ISlippyCoords = {
@@ -41,37 +38,7 @@ export const runFillScreenExample = async () => {
     }
   })
 
-  const threeCanvas = document.createElement('canvas')
-    threeCanvas.height = 1080
-    threeCanvas.width = 1920
-    threeCanvas.style.position = 'fixed'
-    threeCanvas.style.left = '0px'
-    document.body.appendChild(threeCanvas)
-
-    const renderer = new WebGLRenderer({ canvas: threeCanvas, alpha: true });
-
-    const fov = 90;
-    const aspect = 2;
-    const near = 0.1;
-    const far = 5000;
-
-    const camera = new PerspectiveCamera(fov, aspect, near, far);
-
-    const scene = new Scene();
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 5, 0);
-    controls.update();
-
-    const skyColor = 0xFFFFFF;
-    const groundColor = 0xAAAAAA;
-    const intensity = 1;
-    const light = new HemisphereLight(skyColor, groundColor, intensity);
-    scene.add(light);
-
-    light.position.set(220, 199, 164);
-
-    camera.position.set(220, 199, 164);
+  const {scene, renderer, camera} = initThreeCanvasScene()
 
 
   const maxError = 10
@@ -99,18 +66,6 @@ export const runFillScreenExample = async () => {
 
   const boxGeo = new BoxGeometry(10,10,10)
   const box = new Mesh(boxGeo, new MeshBasicMaterial({color: '#FF0000'}))
-//   scene.add(box)
 
 
-  animate()
-
-    function animate() {
-      requestAnimationFrame(animate);
-
-      controls.update();
-
-
-      renderer.render(scene, camera);
-
-    }
 }
