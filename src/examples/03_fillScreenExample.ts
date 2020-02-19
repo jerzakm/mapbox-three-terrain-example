@@ -6,16 +6,26 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { mapUVs } from "../geometry";
 import { initThreeCanvasScene } from "../threeSetup";
 
+interface ITileData {
+  mesh?: Mesh
+  visible: boolean
+  rendered: boolean
+}
+
 export const runFillScreenExample = async () => {
-  const location: ISlippyCoords = {
-      zoom: 10,
-      x: 906,
-      y: 404
+
+  const zoom = 5
+
+  const tileCount = 2 ** (zoom)
+
+  const tileData: ITileData[][] = []
+
+  for (let x = 0; x < tileCount; x++) {
+    tileData[x] = []
+    for (let y = 0; y < tileCount; y++) {
+      tileData[x][y] = {visible: false, rendered: false }
     }
-
-  const tileImg = await fetchTerrainTile(location.zoom, location.x, location.y)
-
-  const terrain: any = decodeTerrainFromTile(tileImg)
+  }
 
   const material = new MeshPhongMaterial({
     // map: texture,
@@ -23,7 +33,7 @@ export const runFillScreenExample = async () => {
     wireframe: true,
     side: DoubleSide
   });
-  const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
+  // const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
 
   window.addEventListener('keydown', (e)=> {
     if(e.key=='w'){
@@ -33,22 +43,35 @@ export const runFillScreenExample = async () => {
     }
     if(e.key=='s'){
       // toggle satellite texture
-      material.map? material.map = null : material.map = texture
+      // material.map? material.map = null : material.map = texture
       material.needsUpdate = true
     }
   })
 
   const {scene, renderer, camera} = initThreeCanvasScene()
 
-
-  const maxError = 10
-
-  const tinBufferGeo = generateDelatinGeometry(terrain, tileImg.width+1, maxError)
-  const tinGeo = mapUVs(tinBufferGeo)
-  const tinMesh = new Mesh(tinGeo, material)
-  scene.add(tinMesh)
-
   scene.add(new HemisphereLight('#999999', '#ccffcc', 0.1))
+
+  async function addTile(x: number, y:number){
+    const tileImg = await fetchTerrainTile(zoom,x,y)
+    const terrain: any = decodeTerrainFromTile(tileImg)
+    const maxError = 500
+
+    const tinBufferGeo = generateDelatinGeometry(terrain, tileImg.width+1, maxError)
+    const tinGeo = mapUVs(tinBufferGeo)
+    const tinMesh = new Mesh(tinGeo, material)
+    tinMesh.position.set(256*x,0, 256*y)
+    scene.add(tinMesh)
+    tileData[x][y].mesh = tinMesh
+    tileData[x][y].rendered = true
+    tileData[x][y].visible = true
+  }
+
+  for (let x = 0; x < tileCount; x++) {
+    for (let y = 0; y < tileCount; y++) {
+      addTile(x,y)
+    }
+  }
 
   camera.updateMatrix();
   camera.updateMatrixWorld();
@@ -63,9 +86,4 @@ export const runFillScreenExample = async () => {
   } else {
       console.log('out')
   }
-
-  const boxGeo = new BoxGeometry(10,10,10)
-  const box = new Mesh(boxGeo, new MeshBasicMaterial({color: '#FF0000'}))
-
-
 }
