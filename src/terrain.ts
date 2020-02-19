@@ -8,7 +8,7 @@ export interface MartiniOptions {
   terrainExaggeration: number
 }
 
-export const decodeTerrainFromTile = (tileImg: HTMLImageElement) => {
+export const decodeTerrainFromTile = (tileImg: HTMLImageElement, flattenScale = 10) => {
   // ! todo move all this logic to worker thread
   const tileSize = tileImg.width
 
@@ -36,7 +36,7 @@ export const decodeTerrainFromTile = (tileImg: HTMLImageElement) => {
       const g = data[k + 1];
       const b = data[k + 2];
       const a = data[k + 3];
-      terrain[y * gridSize + x] = (r * 256 * 256 + g * 256.0 + b) / 10.0 - 10000.0;
+      terrain[y * gridSize + x] = (r * 256 * 256 + g * 256.0 + b) / flattenScale - 10000.0;
     }
   }
   // 2.1 backfill right and bottom borders

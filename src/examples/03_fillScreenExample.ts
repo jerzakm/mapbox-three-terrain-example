@@ -14,7 +14,7 @@ interface ITileData {
 
 export const runFillScreenExample = async () => {
 
-  const zoom = 5
+  const zoom = 2
 
   const tileCount = 2 ** (zoom)
 
@@ -27,35 +27,37 @@ export const runFillScreenExample = async () => {
     }
   }
 
-  const material = new MeshPhongMaterial({
-    // map: texture,
-    color: '#888888',
-    wireframe: true,
-    side: DoubleSide
-  });
-  // const texture = makeSatelliteTexture(location.zoom, location.x, location.y, true)
 
-  window.addEventListener('keydown', (e)=> {
-    if(e.key=='w'){
-      // toggle wireframe
-      material.wireframe? material.wireframe = false : material.wireframe = true
-      material.needsUpdate = true
-    }
-    if(e.key=='s'){
-      // toggle satellite texture
-      // material.map? material.map = null : material.map = texture
-      material.needsUpdate = true
-    }
-  })
 
   const {scene, renderer, camera} = initThreeCanvasScene()
 
   scene.add(new HemisphereLight('#999999', '#ccffcc', 0.1))
 
   async function addTile(x: number, y:number){
+    const texture = makeSatelliteTexture(zoom,x,y, true)
+    const material = new MeshPhongMaterial({
+      // map: texture,
+      color: '#888888',
+      wireframe: true,
+      side: DoubleSide
+    });
+
+    window.addEventListener('keydown', (e)=> {
+      if(e.key=='w'){
+        // toggle wireframe
+        material.wireframe? material.wireframe = false : material.wireframe = true
+        material.needsUpdate = true
+      }
+      if(e.key=='s'){
+        // toggle satellite texture
+        material.map? material.map = null : material.map = texture
+        material.needsUpdate = true
+      }
+    })
+
     const tileImg = await fetchTerrainTile(zoom,x,y)
-    const terrain: any = decodeTerrainFromTile(tileImg)
-    const maxError = 500
+    const terrain: any = decodeTerrainFromTile(tileImg,70)
+    const maxError = 10
 
     const tinBufferGeo = generateDelatinGeometry(terrain, tileImg.width+1, maxError)
     const tinGeo = mapUVs(tinBufferGeo)
