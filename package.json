@@ -23,7 +23,7 @@
   "dependencies": {
     "@mapbox/martini": "^0.2.0",
     "mapbox-gl": "^1.7.0",
-    "three": "^0.113.2"
+    "three": "^0.125.0"
   },
   "devDependencies": {
     "@types/mapbox-gl": "^1.7.0",
